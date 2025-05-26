@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デバイス編集</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #0056b3; }
+        .flash-messages { margin-bottom: 20px; }
+        .flash-messages .success { background-color: #d4edda; color: #155724; padding: 10px; border: 1px solid #c3e6cb; border-radius: 5px; }
+        .flash-messages .error { background-color: #f8d7da; color: #721c24; padding: 10px; border: 1px solid #f5c6cb; border-radius: 5px; }
+        form div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"], input[type="number"] { width: calc(100% - 22px); padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 10px; }
+        button:hover { background-color: #0056b3; }
+        .back-link { display: inline-block; padding: 10px 15px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 5px; }
+        .back-link:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>デバイスを編集</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div>
+                <label for="name">名前:</label>
+                <input type="text" id="name" name="name" value="{{ device.name }}" required>
+            </div>
+            <div>
+                <label for="local_ip">ローカルIPアドレス (任意):</label>
+                <input type="text" id="local_ip" name="local_ip" value="{{ device.local_ip if device.local_ip else '' }}" placeholder="例: 192.168.1.100">
+            </div>
+            <div>
+                <label for="tailscale_ip">Tailscale IPアドレス (任意):</label>
+                <input type="text" id="tailscale_ip" name="tailscale_ip" value="{{ device.tailscale_ip if device.tailscale_ip else '' }}" placeholder="例: 100.100.100.100">
+            </div>
+            <div>
+                <label for="port">ポート (任意):</label>
+                <input type="number" id="port" name="port" min="1" max="65535" value="{{ device.port if device.port is not none else '' }}" placeholder="例: 80">
+            </div>
+            <button type="submit">更新</button>
+            <a href="{{ url_for('index') }}" class="back-link">戻る</a>
+        </form>
+    </div>
+</body>
+</html>

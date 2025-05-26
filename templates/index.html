@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPマネージャー</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        .container { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #0056b3; }
+        .flash-messages { margin-bottom: 20px; }
+        .flash-messages .success { background-color: #d4edda; color: #155724; padding: 10px; border: 1px solid #c3e6cb; border-radius: 5px; }
+        .flash-messages .error { background-color: #f8d7da; color: #721c24; padding: 10px; border: 1px solid #f5c6cb; border-radius: 5px; }
+        .flash-messages .info { background-color: #d1ecf1; color: #0c5460; padding: 10px; border: 1px solid #bee5eb; border-radius: 5px; }
+        .search-sort-controls { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .search-form { display: flex; gap: 5px; }
+        .search-form input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .search-form button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .search-form button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #0056b3; color: white; cursor: pointer; }
+        th a { color: white; text-decoration: none; display: block; width: 100%; height: 100%; } /* Th全体をリンク可能に */
+        th a:hover { text-decoration: underline; }
+        .sort-indicator { margin-left: 5px; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .actions a { text-decoration: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; }
+        .actions a.edit { background-color: #ffc107; color: black; }
+        .actions a.delete { background-color: #dc3545; color: white; }
+        .add-button { display: block; width: fit-content; margin: 20px auto 0; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; text-align: center; }
+        
+        .status-reachable { color: green; font-weight: bold; }
+        .status-unreachable { color: red; font-weight: bold; }
+        .status-unknown { color: gray; }
+
+        /* IPアドレスの表示スタイル */
+        .ip-reachable { background-color: #e6ffe6; } /* 薄い緑色 */
+        .ip-unreachable { background-color: #fcebeb; } /* 薄い赤色の背景 */
+        .ip-unknown { background-color: #f0f0f0; } /* 薄い灰色 */
+
+        /* 名前部分のリンク */
+        .device-name-link {
+            color: #0056b3; /* 青色 */
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .device-name-link:hover {
+            text-decoration: underline;
+        }
+
+        /* アンテナアイコンのスタイル */
+        .signal-bars {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 5px;
+            width: 20px; /* 全体の幅 */
+            height: 16px; /* 全体の高さ */
+            position: relative;
+        }
+        .signal-bar {
+            background-color: #555; /* デフォルトの色 */
+            position: absolute;
+            bottom: 0;
+            width: 4px; /* 各バーの幅 */
+            border-radius: 1px;
+        }
+        .signal-bar-1 { left: 0px; height: 4px; }
+        .signal-bar-2 { left: 5px; height: 8px; }
+        .signal-bar-3 { left: 10px; height: 12px; }
+        .signal-bar-4 { left: 15px; height: 16px; }
+
+        /* シグナル強度に応じた色 */
+        .signal-4 .signal-bar { background-color: #28a745; } /* 緑 */
+        .signal-3 .signal-bar { background-color: #17a2b8; } /* 水色 */
+        .signal-2 .signal-bar { background-color: #ffc107; } /* オレンジ */
+        .signal-1 .signal-bar { background-color: #dc3545; } /* 赤 */
+        .signal-0 .signal-bar { background-color: #6c757d; } /* 灰色 */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>登録デバイス一覧</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="search-sort-controls">
+            <form action="{{ url_for('index') }}" method="get" class="search-form">
+                <input type="text" name="search" placeholder="IPアドレスで検索" value="{{ search_query }}">
+                <button type="submit">検索</button>
+            </form>
+            {# 並び替えはテーブルヘッダーのリンクで行うため、ここでは省略 #}
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>
+                        <a href="{{ url_for('index', sort_by='name', sort_order='asc' if sort_by != 'name' or sort_order == 'desc' else 'desc', search=search_query) }}">
+                            名前
+                            {% if sort_by == 'name' %}
+                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('index', sort_by='local_ip', sort_order='asc' if sort_by != 'local_ip' or sort_order == 'desc' else 'desc', search=search_query) }}">
+                            ローカルIP
+                            {% if sort_by == 'local_ip' %}
+                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('index', sort_by='tailscale_ip', sort_order='asc' if sort_by != 'tailscale_ip' or sort_order == 'desc' else 'desc', search=search_query) }}">
+                            Tailscale IP
+                            {% if sort_by == 'tailscale_ip' %}
+                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>ポート</th>
+                    <th>
+                        <a href="{{ url_for('index', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc', search=search_query) }}">
+                            状態
+                            {% if sort_by == 'status' %}
+                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ url_for('index', sort_by='ping_latency', sort_order='asc' if sort_by != 'ping_latency' or sort_order == 'desc' else 'desc', search=search_query) }}">
+                            Ping速度
+                            {% if sort_by == 'ping_latency' %}
+                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>アクション</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for device in devices %}
+                <tr>
+                    <td>{{ device.id }}</td>
+                    <td>
+                        {% if device.link_ip %}
+                            <a href="http://{{ device.link_ip }}{% if device.link_port %}:{{ device.link_port }}{% endif %}" target="_blank" class="device-name-link">{{ device.name }}</a>
+                        {% else %}
+                            {{ device.name }}
+                        {% endif %}
+                    </td>
+                    <td class="ip-{{ device.local_ip_status }}">
+                        {{ device.local_ip if device.local_ip else '未登録' }}
+                    </td>
+                    <td class="ip-{{ device.tailscale_ip_status }}">
+                        {{ device.tailscale_ip if device.tailscale_ip else '未登録' }}
+                    </td>
+                    <td>
+                        {{ device.port if device.port is not none else '未登録' }}
+                    </td>
+                    <td class="status-{{ device.status | lower }}">{{ device.status }}</td>
+                    <td>
+                        {% if device.ping_latency is not none %}
+                            {{ "%.1f" | format(device.ping_latency) }} ms
+                            <span class="signal-bars signal-{{ get_signal_strength(device.ping_latency) }}">
+                                <span class="signal-bar signal-bar-1"></span>
+                                <span class="signal-bar signal-bar-2"></span>
+                                <span class="signal-bar signal-bar-3"></span>
+                                <span class="signal-bar signal-bar-4"></span>
+                            </span>
+                        {% else %}
+                            -
+                            <span class="signal-bars signal-0">
+                                <span class="signal-bar signal-bar-1"></span>
+                                <span class="signal-bar signal-bar-2"></span>
+                                <span class="signal-bar signal-bar-3"></span>
+                                <span class="signal-bar signal-bar-4"></span>
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('edit_device', device_id=device.id) }}" class="edit">編集</a>
+                        <a href="{{ url_for('delete_device', device_id=device.id) }}" class="delete" onclick="return confirm('本当に削除しますか？');">削除</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="{{ url_for('add_device') }}" class="add-button">デバイスを追加</a>
+    </div>
+</body>
+</html>

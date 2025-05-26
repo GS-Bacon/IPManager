@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.pytest_cache/
+.mypy_cache/
+.vscode/
+
+# Flask specific
+instance/
+
+# Application specific
+data.json  # 登録データファイルはGitに含めない
+*.log      # ログファイル
