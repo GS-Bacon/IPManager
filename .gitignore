@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+.venv/
 venv/
 env/
 pip-log.txt
@@ -12,7 +13,7 @@ pip-delete-this-directory.txt
 .pytest_cache/
 .mypy_cache/
 .vscode/
-
+data.json
 # Flask specific
 instance/
 

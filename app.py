@@ -125,26 +125,43 @@ def check_all_devices_status():
             device['tailscale_ip_status'] = 'unknown'
             device['tailscale_ping_latency'] = None
 
+# 全体ステータスの決定とリンクIPの選択
         if local_ip_reachable or tailscale_ip_reachable:
             device['status'] = '到達可能'
-            if local_ip_reachable and tailscale_ip_reachable:
-                if local_latency is not None and tailscale_latency is not None:
-                    if local_latency <= tailscale_latency:
-                        device['link_ip'] = device['local_ip']
-                    else:
+            
+            # リンクIPの決定ロジック（Tailscale優先）
+            if tailscale_ip_reachable:
+                if local_ip_reachable:
+                    # 両方到達可能な場合、Pingが速い方を優先
+                    if tailscale_latency is not None and local_latency is not None:
+                        if tailscale_latency <= local_latency:
+                            device['link_ip'] = device['tailscale_ip']
+                        else:
+                            device['link_ip'] = device['local_ip']
+                    elif tailscale_latency is not None: # TailscaleのみPing結果がある
                         device['link_ip'] = device['tailscale_ip']
-                elif local_ip_reachable:
-                    device['link_ip'] = device['local_ip']
+                    elif local_latency is not None: # ローカルのみPing結果がある
+                        device['link_ip'] = device['local_ip']
+                    else: # 両方到達可能だが、どちらもPing結果がない場合（例: pingコマンドのタイムアウト設定が短すぎるなど）
+                        device['link_ip'] = device['tailscale_ip'] # デフォルトでTailscale優先
                 else:
+                    # Tailscale IPのみ到達可能な場合
                     device['link_ip'] = device['tailscale_ip']
             elif local_ip_reachable:
+                # ローカルIPのみ到達可能な場合
                 device['link_ip'] = device['local_ip']
-            else: # tailscale_ip_reachable
-                device['link_ip'] = device['tailscale_ip']
-            
-            device['link_port'] = device['port']
+            else:
+                # どちらも到達可能フラグがTrueなのにここに到達するのはおかしいが、念のため
+                device['status'] = '不明'
+                device['link_ip'] = None
 
-        else:
+            # リンクIPが設定されていれば、リンクポートも設定
+            if device['link_ip']:
+                device['link_port'] = device['port']
+            else:
+                device['link_port'] = None
+
+        else: # どちらのIPも到達不可の場合
             device['status'] = '到達不可'
             device['link_ip'] = None
             device['link_port'] = None
