@@ -126,32 +126,37 @@ def check_all_devices_status():
             device['tailscale_ping_latency'] = None
 
 # 全体ステータスの決定とリンクIPの選択
+        # 全体ステータスの決定とリンクIPの選択
         if local_ip_reachable or tailscale_ip_reachable:
             device['status'] = '到達可能'
             
             # リンクIPの決定ロジック（Tailscale優先）
-            if tailscale_ip_reachable:
-                if local_ip_reachable:
-                    # 両方到達可能な場合、Pingが速い方を優先
-                    if tailscale_latency is not None and local_latency is not None:
-                        if tailscale_latency <= local_latency:
-                            device['link_ip'] = device['tailscale_ip']
-                        else:
-                            device['link_ip'] = device['local_ip']
-                    elif tailscale_latency is not None: # TailscaleのみPing結果がある
+            if tailscale_ip_reachable and local_ip_reachable:
+                # 両方到達可能の場合
+                if tailscale_latency is not None and local_latency is not None:
+                    # 両方Pingが通る場合、レイテンシが低い方を優先
+                    if tailscale_latency <= local_latency:
                         device['link_ip'] = device['tailscale_ip']
-                    elif local_latency is not None: # ローカルのみPing結果がある
+                    else:
                         device['link_ip'] = device['local_ip']
-                    else: # 両方到達可能だが、どちらもPing結果がない場合（例: pingコマンドのタイムアウト設定が短すぎるなど）
-                        device['link_ip'] = device['tailscale_ip'] # デフォルトでTailscale優先
-                else:
-                    # Tailscale IPのみ到達可能な場合
+                elif tailscale_latency is not None:
+                    # Tailscale IPは到達可能でPingレイテンシが取得できたが、ローカルIPはPingレイテンシがNoneの場合
                     device['link_ip'] = device['tailscale_ip']
+                elif local_latency is not None:
+                    # ローカルIPは到達可能でPingレイテンシが取得できたが、Tailscale IPはPingレイテンシがNoneの場合
+                    device['link_ip'] = device['local_ip']
+                else:
+                    # 両方到達可能だが、どちらもPingレイテンシがNoneの場合（Ping自体は成功しているが時間が取得できない）
+                    # この場合もTailscaleを優先
+                    device['link_ip'] = device['tailscale_ip']
+            elif tailscale_ip_reachable:
+                # Tailscale IPのみ到達可能な場合
+                device['link_ip'] = device['tailscale_ip']
             elif local_ip_reachable:
                 # ローカルIPのみ到達可能な場合
                 device['link_ip'] = device['local_ip']
             else:
-                # どちらも到達可能フラグがTrueなのにここに到達するのはおかしいが、念のため
+                # ここに到達することは理論上ないはずだが、念のため
                 device['status'] = '不明'
                 device['link_ip'] = None
 
@@ -217,10 +222,12 @@ def index():
         flash(f"IPアドレス「{search_query}」で検索しました。", 'info')
 
     # 並び替え機能
-    sort_by = request.args.get('sort_by', 'name')
+    sort_by = request.args.get('sort_by', 'id')
     sort_order = request.args.get('sort_order', 'asc') # asc:昇順, desc:降順
 
     def get_sort_key(device):
+        if sort_by == 'id': # ここを追加
+            return device.get('id', 0) # IDは整数なのでそのまま返す
         if sort_by == 'name':
             return device.get('name', '').lower()
         elif sort_by == 'local_ip':

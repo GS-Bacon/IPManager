@@ -5,26 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>IPマネージャー</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
         .container { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #0056b3; }
+        h1 { text-align: center; color: #0056b3; margin-bottom: 20px; }
         .flash-messages { margin-bottom: 20px; }
         .flash-messages .success { background-color: #d4edda; color: #155724; padding: 10px; border: 1px solid #c3e6cb; border-radius: 5px; }
         .flash-messages .error { background-color: #f8d7da; color: #721c24; padding: 10px; border: 1px solid #f5c6cb; border-radius: 5px; }
         .flash-messages .info { background-color: #d1ecf1; color: #0c5460; padding: 10px; border: 1px solid #bee5eb; border-radius: 5px; }
-        .search-sort-controls { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .search-form { display: flex; gap: 5px; }
-        .search-form input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .search-form button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        
+        .search-sort-controls { 
+            margin-bottom: 20px; 
+            display: flex; 
+            flex-wrap: wrap; /* 小画面で折り返す */
+            justify-content: space-between; 
+            align-items: center; 
+            gap: 10px; /* アイテム間の隙間 */
+        }
+        .search-form { display: flex; gap: 5px; flex-grow: 1; max-width: 300px;} /* 検索フォームの幅を制限 */
+        .search-form input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; flex-grow: 1; }
+        .search-form button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
         .search-form button:hover { background-color: #0056b3; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #0056b3; color: white; cursor: pointer; }
-        th a { color: white; text-decoration: none; display: block; width: 100%; height: 100%; } /* Th全体をリンク可能に */
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+        th { background-color: #0056b3; color: white; cursor: pointer; white-space: nowrap; }
+        th a { color: white; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 0 5px; } /* Th全体をリンク可能に */
         th a:hover { text-decoration: underline; }
         .sort-indicator { margin-left: 5px; }
         tr:nth-child(even) { background-color: #f2f2f2; }
-        .actions a { text-decoration: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; }
+        .actions a { text-decoration: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; white-space: nowrap; }
         .actions a.edit { background-color: #ffc107; color: black; }
         .actions a.delete { background-color: #dc3545; color: white; }
         .add-button { display: block; width: fit-content; margin: 20px auto 0; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; text-align: center; }
@@ -37,6 +46,19 @@
         .ip-reachable { background-color: #e6ffe6; } /* 薄い緑色 */
         .ip-unreachable { background-color: #fcebeb; } /* 薄い赤色の背景 */
         .ip-unknown { background-color: #f0f0f0; } /* 薄い灰色 */
+        .ip-link {
+            text-decoration: none;
+            color: #0056b3; /* 青色 */
+            font-weight: bold;
+            display: block; /* セル全体をリンク化 */
+            width: 100%;
+            height: 100%;
+            padding: 8px 0; /* tdのpaddingと合わせる */
+            margin: -8px 0; /* tdのpaddingを相殺 */
+        }
+        .ip-link:hover {
+            text-decoration: underline;
+        }
 
         /* 名前部分のリンク */
         .device-name-link {
@@ -75,6 +97,93 @@
         .signal-2 .signal-bar { background-color: #ffc107; } /* オレンジ */
         .signal-1 .signal-bar { background-color: #dc3545; } /* 赤 */
         .signal-0 .signal-bar { background-color: #6c757d; } /* 灰色 */
+
+        /* --- レスポンシブデザイン --- */
+        @media screen and (max-width: 768px) { /* 768px以下の画面幅 (タブレット・スマホ向け) */
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            h1 { font-size: 1.8em; }
+
+            .search-sort-controls {
+                flex-direction: column; /* 縦に並べる */
+                align-items: stretch; /* 幅いっぱいに広げる */
+            }
+            .search-form {
+                width: 100%; /* 検索フォームを幅いっぱいに */
+                max-width: none;
+            }
+            .add-button {
+                width: 100%; /* ボタンを幅いっぱいに */
+            }
+
+            table, thead, tbody, th, td, tr {
+                display: block; /* テーブル要素をブロック要素として扱う */
+            }
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px; /* ヘッダーを隠す */
+            }
+            tr {
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+                border-radius: 5px;
+                overflow: hidden; /* 角丸を適用 */
+            }
+            td {
+                border: none; /* セルのボーダーをなくす */
+                border-bottom: 1px solid #eee; /* 各データの区切り線 */
+                position: relative;
+                padding-left: 50%; /* ラベル用のスペースを確保 */
+                text-align: right; /* 値を右寄せ */
+                white-space: normal; /* 折り返しを許可 */
+            }
+            td:last-child {
+                border-bottom: none; /* 最後のセルの下線は不要 */
+            }
+            td::before {
+                content: attr(data-label); /* data-label属性の値を表示 */
+                position: absolute;
+                left: 6px;
+                width: 45%; /* ラベルの幅 */
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #0056b3;
+            }
+
+            .actions {
+                text-align: right; /* アクションボタンを右寄せ */
+                padding: 10px 8px; /* パディング調整 */
+            }
+            .actions a {
+                margin: 5px 0 0 5px; /* ボタン間の余白 */
+                display: inline-block; /* ボタンを横並びに */
+                width: auto;
+            }
+            /* IPリンクのレスポンシブ対応 */
+            .ip-link {
+                padding: 0; /* data-labelがあるのでpadding調整 */
+                margin: 0; /* data-labelがあるのでmargin調整 */
+                width: auto; /* 幅を自動調整 */
+            }
+        }
+        
+        @media screen and (max-width: 480px) { /* さらに小さな画面（一部のスマホ） */
+            .search-form input[type="text"],
+            .search-form button {
+                font-size: 0.9em;
+                padding: 6px 10px;
+            }
+            td {
+                padding-left: 45%; /* ラベル用のスペースを微調整 */
+            }
+            td::before {
+                width: 40%;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -102,7 +211,14 @@
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
+                    <th>
+                        <a href="{{ url_for('index', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', search=search_query) }}">
+                            ID
+                            {% if sort_by == 'id' %}
+                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
                     <th>
                         <a href="{{ url_for('index', sort_by='name', sort_order='asc' if sort_by != 'name' or sort_order == 'desc' else 'desc', search=search_query) }}">
                             名前
@@ -150,25 +266,33 @@
             <tbody>
                 {% for device in devices %}
                 <tr>
-                    <td>{{ device.id }}</td>
-                    <td>
+                    <td data-label="ID">{{ device.id }}</td>
+                    <td data-label="名前">
                         {% if device.link_ip %}
                             <a href="http://{{ device.link_ip }}{% if device.link_port %}:{{ device.link_port }}{% endif %}" target="_blank" class="device-name-link">{{ device.name }}</a>
                         {% else %}
                             {{ device.name }}
                         {% endif %}
                     </td>
-                    <td class="ip-{{ device.local_ip_status }}">
-                        {{ device.local_ip if device.local_ip else '未登録' }}
+                    <td data-label="ローカルIP" class="ip-{{ device.local_ip_status }}">
+                        {% if device.local_ip and device.local_ip_status == 'reachable' %}
+                            <a href="http://{{ device.local_ip }}{% if device.port %}:{{ device.port }}{% endif %}" target="_blank" class="ip-link">{{ device.local_ip }}</a>
+                        {% else %}
+                            {{ device.local_ip if device.local_ip else '未登録' }}
+                        {% endif %}
                     </td>
-                    <td class="ip-{{ device.tailscale_ip_status }}">
-                        {{ device.tailscale_ip if device.tailscale_ip else '未登録' }}
+                    <td data-label="Tailscale IP" class="ip-{{ device.tailscale_ip_status }}">
+                        {% if device.tailscale_ip and device.tailscale_ip_status == 'reachable' %}
+                            <a href="http://{{ device.tailscale_ip }}{% if device.port %}:{{ device.port }}{% endif %}" target="_blank" class="ip-link">{{ device.tailscale_ip }}</a>
+                        {% else %}
+                            {{ device.tailscale_ip if device.tailscale_ip else '未登録' }}
+                        {% endif %}
                     </td>
-                    <td>
+                    <td data-label="ポート">
                         {{ device.port if device.port is not none else '未登録' }}
                     </td>
-                    <td class="status-{{ device.status | lower }}">{{ device.status }}</td>
-                    <td>
+                    <td data-label="状態" class="status-{{ device.status | lower }}">{{ device.status }}</td>
+                    <td data-label="Ping速度">
                         {% if device.ping_latency is not none %}
                             {{ "%.1f" | format(device.ping_latency) }} ms
                             <span class="signal-bars signal-{{ get_signal_strength(device.ping_latency) }}">
@@ -187,7 +311,7 @@
                             </span>
                         {% endif %}
                     </td>
-                    <td class="actions">
+                    <td data-label="アクション" class="actions">
                         <a href="{{ url_for('edit_device', device_id=device.id) }}" class="edit">編集</a>
                         <a href="{{ url_for('delete_device', device_id=device.id) }}" class="delete" onclick="return confirm('本当に削除しますか？');">削除</a>
                     </td>
