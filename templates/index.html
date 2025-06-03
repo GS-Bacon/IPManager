@@ -16,12 +16,12 @@
         .search-sort-controls { 
             margin-bottom: 20px; 
             display: flex; 
-            flex-wrap: wrap; /* 小画面で折り返す */
+            flex-wrap: wrap; 
             justify-content: space-between; 
             align-items: center; 
-            gap: 10px; /* アイテム間の隙間 */
+            gap: 10px; 
         }
-        .search-form { display: flex; gap: 5px; flex-grow: 1; max-width: 300px;} /* 検索フォームの幅を制限 */
+        .search-form { display: flex; gap: 5px; flex-grow: 1; max-width: 350px;} 
         .search-form input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; flex-grow: 1; }
         .search-form button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
         .search-form button:hover { background-color: #0056b3; }
@@ -29,7 +29,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
         th { background-color: #0056b3; color: white; cursor: pointer; white-space: nowrap; }
-        th a { color: white; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 0 5px; } /* Th全体をリンク可能に */
+        th a { color: white; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 0 5px; }
         th a:hover { text-decoration: underline; }
         .sort-indicator { margin-left: 5px; }
         tr:nth-child(even) { background-color: #f2f2f2; }
@@ -46,28 +46,27 @@
         .ip-reachable { background-color: #e6ffe6; } /* 薄い緑色 */
         .ip-unreachable { background-color: #fcebeb; } /* 薄い赤色の背景 */
         .ip-unknown { background-color: #f0f0f0; } /* 薄い灰色 */
-        .ip-link {
-            text-decoration: none;
-            color: #0056b3; /* 青色 */
-            font-weight: bold;
-            display: block; /* セル全体をリンク化 */
-            width: 100%;
-            height: 100%;
-            padding: 8px 0; /* tdのpaddingと合わせる */
-            margin: -8px 0; /* tdのpaddingを相殺 */
-        }
-        .ip-link:hover {
-            text-decoration: underline;
-        }
 
-        /* 名前部分のリンク */
-        .device-name-link {
-            color: #0056b3; /* 青色 */
-            font-weight: bold;
+        /* サービス名リンクのスタイル */
+        .service-link {
+            display: block;
             text-decoration: none;
+            color: #007bff; /* 青色 */
+            margin-bottom: 2px; 
+            font-weight: bold; 
         }
-        .device-name-link:hover {
+        .service-link:hover {
             text-decoration: underline;
+        }
+        .service-entry {
+            margin-bottom: 5px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #eee; 
+        }
+        .service-entry:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
 
         /* アンテナアイコンのスタイル */
@@ -75,15 +74,15 @@
             display: inline-block;
             vertical-align: middle;
             margin-left: 5px;
-            width: 20px; /* 全体の幅 */
-            height: 16px; /* 全体の高さ */
+            width: 20px; 
+            height: 16px; 
             position: relative;
         }
         .signal-bar {
-            background-color: #555; /* デフォルトの色 */
+            background-color: #555; 
             position: absolute;
             bottom: 0;
-            width: 4px; /* 各バーの幅 */
+            width: 4px; 
             border-radius: 1px;
         }
         .signal-bar-1 { left: 0px; height: 4px; }
@@ -92,60 +91,60 @@
         .signal-bar-4 { left: 15px; height: 16px; }
 
         /* シグナル強度に応じた色 */
-        .signal-4 .signal-bar { background-color: #28a745; } /* 緑 */
-        .signal-3 .signal-bar { background-color: #17a2b8; } /* 水色 */
-        .signal-2 .signal-bar { background-color: #ffc107; } /* オレンジ */
-        .signal-1 .signal-bar { background-color: #dc3545; } /* 赤 */
-        .signal-0 .signal-bar { background-color: #6c757d; } /* 灰色 */
+        .signal-4 .signal-bar { background-color: #28a745; } 
+        .signal-3 .signal-bar { background-color: #17a2b8; } 
+        .signal-2 .signal-bar { background-color: #ffc107; } 
+        .signal-1 .signal-bar { background-color: #dc3545; } 
+        .signal-0 .signal-bar { background-color: #6c757d; } 
 
         /* --- レスポンシブデザイン --- */
-        @media screen and (max-width: 768px) { /* 768px以下の画面幅 (タブレット・スマホ向け) */
+        @media screen and (max-width: 768px) {
             body { padding: 10px; }
             .container { padding: 15px; }
             h1 { font-size: 1.8em; }
 
             .search-sort-controls {
-                flex-direction: column; /* 縦に並べる */
-                align-items: stretch; /* 幅いっぱいに広げる */
+                flex-direction: column; 
+                align-items: stretch; 
             }
             .search-form {
-                width: 100%; /* 検索フォームを幅いっぱいに */
+                width: 100%; 
                 max-width: none;
             }
             .add-button {
-                width: 100%; /* ボタンを幅いっぱいに */
+                width: 100%; 
             }
 
             table, thead, tbody, th, td, tr {
-                display: block; /* テーブル要素をブロック要素として扱う */
+                display: block; 
             }
             thead tr {
                 position: absolute;
                 top: -9999px;
-                left: -9999px; /* ヘッダーを隠す */
+                left: -9999px; 
             }
             tr {
                 border: 1px solid #ccc;
                 margin-bottom: 10px;
                 border-radius: 5px;
-                overflow: hidden; /* 角丸を適用 */
+                overflow: hidden; 
             }
             td {
-                border: none; /* セルのボーダーをなくす */
-                border-bottom: 1px solid #eee; /* 各データの区切り線 */
+                border: none; 
+                border-bottom: 1px solid #eee; 
                 position: relative;
-                padding-left: 50%; /* ラベル用のスペースを確保 */
-                text-align: right; /* 値を右寄せ */
-                white-space: normal; /* 折り返しを許可 */
+                padding-left: 50%; 
+                text-align: right; 
+                white-space: normal; 
             }
             td:last-child {
-                border-bottom: none; /* 最後のセルの下線は不要 */
+                border-bottom: none; 
             }
             td::before {
-                content: attr(data-label); /* data-label属性の値を表示 */
+                content: attr(data-label); 
                 position: absolute;
                 left: 6px;
-                width: 45%; /* ラベルの幅 */
+                width: 45%; 
                 padding-right: 10px;
                 white-space: nowrap;
                 text-align: left;
@@ -154,30 +153,31 @@
             }
 
             .actions {
-                text-align: right; /* アクションボタンを右寄せ */
-                padding: 10px 8px; /* パディング調整 */
+                text-align: right; 
+                padding: 10px 8px; 
             }
             .actions a {
-                margin: 5px 0 0 5px; /* ボタン間の余白 */
-                display: inline-block; /* ボタンを横並びに */
+                margin: 5px 0 0 5px; 
+                display: inline-block; 
                 width: auto;
             }
-            /* IPリンクのレスポンシブ対応 */
-            .ip-link {
-                padding: 0; /* data-labelがあるのでpadding調整 */
-                margin: 0; /* data-labelがあるのでmargin調整 */
-                width: auto; /* 幅を自動調整 */
+            .service-entry {
+                text-align: right; 
+            }
+            .service-link {
+                text-align: right; 
+                padding: 0; 
             }
         }
         
-        @media screen and (max-width: 480px) { /* さらに小さな画面（一部のスマホ） */
+        @media screen and (max-width: 480px) { 
             .search-form input[type="text"],
             .search-form button {
                 font-size: 0.9em;
                 padding: 6px 10px;
             }
             td {
-                padding-left: 45%; /* ラベル用のスペースを微調整 */
+                padding-left: 45%; 
             }
             td::before {
                 width: 40%;
@@ -202,10 +202,9 @@
 
         <div class="search-sort-controls">
             <form action="{{ url_for('index') }}" method="get" class="search-form">
-                <input type="text" name="search" placeholder="IPアドレスで検索" value="{{ search_query }}">
+                <input type="text" name="search" placeholder="名前/IP/サービス名/ポートで検索" value="{{ search_query }}">
                 <button type="submit">検索</button>
             </form>
-            {# 並び替えはテーブルヘッダーのリンクで行うため、ここでは省略 #}
         </div>
 
         <table>
@@ -243,7 +242,7 @@
                             {% endif %}
                         </a>
                     </th>
-                    <th>ポート</th>
+                    <th>サービス / ポート</th>
                     <th>
                         <a href="{{ url_for('index', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc', search=search_query) }}">
                             状態
@@ -260,6 +259,14 @@
                             {% endif %}
                         </a>
                     </th>
+                    <th>
+                        <a href="{{ url_for('index', sort_by='last_checked', sort_order='asc' if sort_by != 'last_checked' or sort_order == 'desc' else 'desc', search=search_query) }}">
+                            最終確認
+                            {% if sort_by == 'last_checked' %}
+                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
                     <th>アクション</th>
                 </tr>
             </thead>
@@ -268,28 +275,43 @@
                 <tr>
                     <td data-label="ID">{{ device.id }}</td>
                     <td data-label="名前">
-                        {% if device.link_ip %}
-                            <a href="http://{{ device.link_ip }}{% if device.link_port %}:{{ device.link_port }}{% endif %}" target="_blank" class="device-name-link">{{ device.name }}</a>
-                        {% else %}
-                            {{ device.name }}
-                        {% endif %}
+                        {{ device.name }}
                     </td>
                     <td data-label="ローカルIP" class="ip-{{ device.local_ip_status }}">
-                        {% if device.local_ip and device.local_ip_status == 'reachable' %}
-                            <a href="http://{{ device.local_ip }}{% if device.port %}:{{ device.port }}{% endif %}" target="_blank" class="ip-link">{{ device.local_ip }}</a>
-                        {% else %}
-                            {{ device.local_ip if device.local_ip else '未登録' }}
-                        {% endif %}
+                        {{ device.local_ip if device.local_ip else '未登録' }}
                     </td>
                     <td data-label="Tailscale IP" class="ip-{{ device.tailscale_ip_status }}">
-                        {% if device.tailscale_ip and device.tailscale_ip_status == 'reachable' %}
-                            <a href="http://{{ device.tailscale_ip }}{% if device.port %}:{{ device.port }}{% endif %}" target="_blank" class="ip-link">{{ device.tailscale_ip }}</a>
-                        {% else %}
-                            {{ device.tailscale_ip if device.tailscale_ip else '未登録' }}
-                        {% endif %}
+                        {{ device.tailscale_ip if device.tailscale_ip else '未登録' }}
                     </td>
-                    <td data-label="ポート">
-                        {{ device.port if device.port is not none else '未登録' }}
+                    <td data-label="サービス / ポート">
+                        {% if device.services %}
+                            {% for service in device.services %}
+                                <div class="service-entry">
+                                    {% if device.link_ip %} {# IPが設定されている場合のみリンクを生成 #}
+                                        <a href="http://{{ device.link_ip }}{% if service.port %}:{{ service.port }}{% endif %}" target="_blank" class="service-link">
+                                            {{ service.name }} 
+                                            {% if service.port %}
+                                                ({{ service.port }})
+                                            {% else %}
+                                                (ポートなし)
+                                            {% endif %}
+                                        </a>
+                                    {% else %}
+                                        {# IPが設定されていない場合はリンクなしで表示 #}
+                                        <span>
+                                            {{ service.name }} 
+                                            {% if service.port %}
+                                                ({{ service.port }})
+                                            {% else %}
+                                                (ポートなし)
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            サービス未登録
+                        {% endif %}
                     </td>
                     <td data-label="状態" class="status-{{ device.status | lower }}">{{ device.status }}</td>
                     <td data-label="Ping速度">
@@ -311,6 +333,7 @@
                             </span>
                         {% endif %}
                     </td>
+                    <td data-label="最終確認">{{ format_last_checked(device.last_checked) }}</td>
                     <td data-label="アクション" class="actions">
                         <a href="{{ url_for('edit_device', device_id=device.id) }}" class="edit">編集</a>
                         <a href="{{ url_for('delete_device', device_id=device.id) }}" class="delete" onclick="return confirm('本当に削除しますか？');">削除</a>
