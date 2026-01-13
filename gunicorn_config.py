@@ -2,9 +2,7 @@ import threading
 import time
 import sys
 
-from app import app
-from config import Config
-from utils.scheduler import check_all_devices_status
+from app import app, check_all_devices_status, AUTO_CHECK_INTERVAL_SECONDS
 
 # 自動確認スレッドの制御変数
 _auto_checker_thread = None
@@ -17,10 +15,10 @@ def auto_checker_loop():
     while True:
         try:
             with app.app_context():
-                check_all_devices_status(app)
+                check_all_devices_status()
         except Exception as e:
             print(f"自動状態確認スレッドでエラーが発生しました: {e}", file=sys.stderr)
-        time.sleep(Config.AUTO_CHECK_INTERVAL_SECONDS)
+        time.sleep(AUTO_CHECK_INTERVAL_SECONDS)
 
 
 def on_starting(server):

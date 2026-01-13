@@ -1,319 +1,704 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サービス一覧 - サービスチェッカー</title>
+    <style>
+    :root {
+        --color-base: #1E2613;
+        --color-surface: #262e1d;
+        --color-surface-light: #333d2c;
+        --color-main: #C4D6B3;
+        --color-accent: #FFD97D;
+        --color-text: #E0E0E0;
+        --color-muted: #808080;
+        --color-reachable: #2d8a5e;
+        --color-unreachable: #a31d1d;
+        --color-unknown: #555;
+        --color-private: #3a72f5;
+        --color-tailscale: #31589c;
+        --border-radius: 6px;
+        --transition: 0.2s ease;
+    }
 
-{% block title %}IPマネージャー{% endblock %}
-{% block heading %}登録デバイス一覧{% endblock %}
+    * { box-sizing: border-box; }
+    body {
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        margin: 0; padding: 16px;
+        background: var(--color-base);
+        color: var(--color-text);
+        font-size: 14px;
+    }
 
-{% block extra_styles %}
-        /* 検索・ソートコントロール */
-        .search-sort-controls {
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-        .search-form { display: flex; gap: 5px; flex-grow: 1; max-width: 350px; }
-        .search-form input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; flex-grow: 1; }
-        .search-form button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-        .search-form button:hover { background-color: #0056b3; }
+    .container {
+        max-width: 1400px;
+        margin: auto;
+    }
 
-        /* テーブルスタイル */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
-        th { background-color: #0056b3; color: white; cursor: pointer; white-space: nowrap; }
-        th a { color: white; text-decoration: none; display: flex; align-items: center; justify-content: space-between; padding: 0 5px; }
-        th a:hover { text-decoration: underline; }
-        .sort-indicator { margin-left: 5px; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-        .actions a { text-decoration: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; white-space: nowrap; }
-        .actions a.edit { background-color: #ffc107; color: black; }
-        .actions a.delete { background-color: #dc3545; color: white; }
-        .add-button { display: block; width: fit-content; margin: 20px auto 0; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; text-align: center; }
+    /* ヘッダー */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--color-surface-light);
+    }
+    .header h1 {
+        margin: 0;
+        font-size: 1.5em;
+        color: var(--color-main);
+    }
+    .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 0.85em;
+        color: var(--color-muted);
+    }
 
-        /* ステータス表示 */
-        .status-reachable { color: green; font-weight: bold; }
-        .status-unreachable { color: red; font-weight: bold; }
-        .status-unknown { color: gray; }
+    /* ボタン共通 */
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85em;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all var(--transition);
+    }
+    .btn-primary { background: var(--color-accent); color: var(--color-base); }
+    .btn-primary:hover { background: var(--color-main); }
+    .btn-success { background: var(--color-reachable); color: white; }
+    .btn-success:hover { background: #36a870; }
+    .btn-danger { background: var(--color-unreachable); color: white; }
+    .btn-danger:hover { background: #c42020; }
+    .btn-secondary { background: var(--color-surface-light); color: var(--color-text); }
+    .btn-secondary:hover { background: #444; }
+    .btn-sm { padding: 4px 8px; font-size: 0.8em; }
 
-        /* IPアドレスの表示スタイル */
-        .ip-reachable { background-color: #e6ffe6; }
-        .ip-unreachable { background-color: #fcebeb; }
-        .ip-unknown { background-color: #f0f0f0; }
+    /* コントロールバー */
+    .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: center;
+    }
+    .search-box {
+        display: flex;
+        gap: 6px;
+        flex: 1;
+        min-width: 200px;
+        max-width: 350px;
+    }
+    .search-box input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--color-surface-light);
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-radius: var(--border-radius);
+    }
+    .view-toggle {
+        display: flex;
+        gap: 4px;
+        background: var(--color-surface);
+        padding: 4px;
+        border-radius: var(--border-radius);
+    }
+    .view-toggle a {
+        padding: 6px 12px;
+        border-radius: 4px;
+        color: var(--color-muted);
+        text-decoration: none;
+        font-size: 0.85em;
+    }
+    .view-toggle a.active {
+        background: var(--color-main);
+        color: var(--color-base);
+    }
 
-        /* サービス名リンクのスタイル */
-        .service-link {
-            display: block;
-            text-decoration: none;
-            color: #007bff;
-            margin-bottom: 2px;
-            font-weight: bold;
-        }
-        .service-link:hover { text-decoration: underline; }
-        .service-entry {
-            margin-bottom: 5px;
-            padding-bottom: 5px;
-            border-bottom: 1px dotted #eee;
-        }
-        .service-entry:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
+    /* フラッシュメッセージ */
+    .flash { padding: 10px 14px; border-radius: var(--border-radius); margin-bottom: 12px; font-weight: 500; }
+    .flash.success { background: var(--color-reachable); }
+    .flash.error { background: var(--color-unreachable); }
+    .flash.info { background: var(--color-private); }
+    .flash.warning { background: #b8860b; }
 
-        /* アンテナアイコンのスタイル */
-        .signal-bars {
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 5px;
-            width: 20px;
-            height: 16px;
-            position: relative;
-        }
-        .signal-bar {
-            background-color: #555;
-            position: absolute;
-            bottom: 0;
-            width: 4px;
-            border-radius: 1px;
-        }
-        .signal-bar-1 { left: 0px; height: 4px; }
-        .signal-bar-2 { left: 5px; height: 8px; }
-        .signal-bar-3 { left: 10px; height: 12px; }
-        .signal-bar-4 { left: 15px; height: 16px; }
+    /* 登録フォーム */
+    .add-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: var(--color-surface);
+        padding: 12px;
+        border-radius: var(--border-radius);
+        margin-bottom: 16px;
+        align-items: flex-end;
+    }
+    .add-form .field { display: flex; flex-direction: column; gap: 4px; }
+    .add-form .field.name { flex: 2; min-width: 120px; }
+    .add-form .field.ip { flex: 2; min-width: 140px; }
+    .add-form .field.port { flex: 1; min-width: 80px; }
+    .add-form label { font-size: 0.75em; color: var(--color-main); font-weight: 600; }
+    .add-form input {
+        padding: 8px;
+        border: 1px solid var(--color-surface-light);
+        background: var(--color-base);
+        color: var(--color-text);
+        border-radius: var(--border-radius);
+    }
 
-        /* シグナル強度に応じた色 */
-        .signal-4 .signal-bar { background-color: #28a745; }
-        .signal-3 .signal-bar { background-color: #17a2b8; }
-        .signal-2 .signal-bar { background-color: #ffc107; }
-        .signal-1 .signal-bar { background-color: #dc3545; }
-        .signal-0 .signal-bar { background-color: #6c757d; }
-{% endblock %}
+    /* グループヘッダー */
+    .group-header {
+        background: var(--color-surface-light);
+        padding: 10px 14px;
+        margin: 16px 0 8px;
+        border-radius: var(--border-radius);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .group-header:first-of-type { margin-top: 0; }
+    .group-name {
+        font-weight: 700;
+        color: var(--color-main);
+        font-size: 1em;
+    }
+    .group-stats {
+        font-size: 0.85em;
+        color: var(--color-muted);
+    }
+    .group-stats .ok { color: var(--color-reachable); }
+    .group-stats .ng { color: var(--color-unreachable); }
 
-{% block responsive_styles %}
-            .search-sort-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .search-form {
-                width: 100%;
-                max-width: none;
-            }
-            .add-button {
-                width: 100%;
-            }
+    /* テーブル */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-surface);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+    th, td {
+        padding: 10px 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--color-base);
+    }
+    th {
+        background: var(--color-surface-light);
+        font-size: 0.8em;
+        font-weight: 600;
+        color: var(--color-main);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    th a { color: inherit; text-decoration: none; }
+    th a:hover { color: var(--color-accent); }
+    tr:hover { background: rgba(255,255,255,0.03); }
+    td.name { font-weight: 600; }
+    td.name a { color: var(--color-text); }
+    td.name a:hover { color: var(--color-accent); }
+    td.ip { font-family: 'Consolas', monospace; font-size: 0.9em; }
+    td.port { font-family: 'Consolas', monospace; }
 
-            table, thead, tbody, th, td, tr {
-                display: block;
-            }
-            thead tr {
-                position: absolute;
-                top: -9999px;
-                left: -9999px;
-            }
-            tr {
-                border: 1px solid #ccc;
-                margin-bottom: 10px;
-                border-radius: 5px;
-                overflow: hidden;
-            }
-            td {
-                border: none;
-                border-bottom: 1px solid #eee;
-                position: relative;
-                padding-left: 50%;
-                text-align: right;
-                white-space: normal;
-            }
-            td:last-child {
-                border-bottom: none;
-            }
-            td::before {
-                content: attr(data-label);
-                position: absolute;
-                left: 6px;
-                width: 45%;
-                padding-right: 10px;
-                white-space: nowrap;
-                text-align: left;
-                font-weight: bold;
-                color: #0056b3;
-            }
+    /* ステータスバッジ */
+    .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+    .status.reachable { background: var(--color-reachable); color: white; }
+    .status.unreachable { background: var(--color-unreachable); color: white; }
+    .status.unknown { background: var(--color-unknown); color: #ccc; }
+    .status.checking {
+        background: var(--color-accent);
+        color: var(--color-base);
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+    }
+    .latency { font-size: 0.8em; opacity: 0.9; }
+    .last-check { font-size: 0.75em; color: var(--color-muted); display: block; margin-top: 2px; }
 
-            .actions {
-                text-align: right;
-                padding: 10px 8px;
-            }
-            .actions a {
-                margin: 5px 0 0 5px;
-                display: inline-block;
-                width: auto;
-            }
-            .service-entry {
-                text-align: right;
-            }
-            .service-link {
-                text-align: right;
-                padding: 0;
-            }
-{% endblock %}
+    /* 操作ボタン */
+    .actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+    .check-btn {
+        width: 28px; height: 28px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-surface-light);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        color: var(--color-text);
+        transition: all var(--transition);
+    }
+    .check-btn:hover { background: var(--color-reachable); color: white; }
+    .check-btn.checking { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-{% block small_screen_styles %}
-            .search-form input[type="text"],
-            .search-form button {
-                font-size: 0.9em;
-                padding: 6px 10px;
-            }
-            td {
-                padding-left: 45%;
-            }
-            td::before {
-                width: 40%;
-            }
-{% endblock %}
+    /* 編集モード */
+    .edit-input {
+        padding: 4px 8px;
+        border: 1px solid var(--color-main);
+        background: var(--color-base);
+        color: var(--color-text);
+        border-radius: 4px;
+        font-size: 0.9em;
+        width: 100%;
+    }
+    .edit-mode { display: none; }
+    tr.editing .view-mode { display: none; }
+    tr.editing .edit-mode { display: inline-block; }
+    tr.editing .actions .view-mode { display: none; }
+    tr.editing .actions .edit-mode { display: flex; }
 
-{% block content %}
-        <div class="search-sort-controls">
-            <form action="{{ url_for('index') }}" method="get" class="search-form">
-                <input type="text" name="search" placeholder="名前/IP/サービス名/ポートで検索" value="{{ search_query }}">
-                <button type="submit">検索</button>
-            </form>
+    /* JSON表示 */
+    #jsonData {
+        display: none;
+        margin-top: 16px;
+        padding: 12px;
+        background: var(--color-base);
+        border: 1px solid var(--color-surface-light);
+        border-radius: var(--border-radius);
+        max-height: 300px;
+        overflow: auto;
+        font-family: 'Consolas', monospace;
+        font-size: 0.85em;
+        white-space: pre-wrap;
+    }
+
+    /* チェック進捗 */
+    .check-progress {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: var(--color-surface);
+        border-radius: var(--border-radius);
+        margin-bottom: 12px;
+    }
+    .check-progress.active { display: flex; }
+    .progress-bar {
+        flex: 1;
+        height: 6px;
+        background: var(--color-base);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: var(--color-reachable);
+        transition: width 0.3s;
+    }
+    .progress-text { font-size: 0.85em; color: var(--color-muted); min-width: 80px; text-align: right; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- ヘッダー -->
+    <div class="header">
+        <h1>サービスチェッカー</h1>
+        <div class="header-meta">
+            <span>v{{ app_version }}</span>
+            <span>|</span>
+            <span id="lastUpdated">最終: {{ format_last_checked(last_updated) }}</span>
+            <button class="btn btn-success" onclick="checkAllServices()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                全チェック
+            </button>
         </div>
+    </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>
-                        <a href="{{ url_for('index', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', search=search_query) }}">
-                            ID
-                            {% if sort_by == 'id' %}
-                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        <a href="{{ url_for('index', sort_by='name', sort_order='asc' if sort_by != 'name' or sort_order == 'desc' else 'desc', search=search_query) }}">
-                            名前
-                            {% if sort_by == 'name' %}
-                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        <a href="{{ url_for('index', sort_by='local_ip', sort_order='asc' if sort_by != 'local_ip' or sort_order == 'desc' else 'desc', search=search_query) }}">
-                            ローカルIP
-                            {% if sort_by == 'local_ip' %}
-                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        <a href="{{ url_for('index', sort_by='tailscale_ip', sort_order='asc' if sort_by != 'tailscale_ip' or sort_order == 'desc' else 'desc', search=search_query) }}">
-                            Tailscale IP
-                            {% if sort_by == 'tailscale_ip' %}
-                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>サービス / ポート</th>
-                    <th>
-                        <a href="{{ url_for('index', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc', search=search_query) }}">
-                            状態
-                            {% if sort_by == 'status' %}
-                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        <a href="{{ url_for('index', sort_by='ping_latency', sort_order='asc' if sort_by != 'ping_latency' or sort_order == 'desc' else 'desc', search=search_query) }}">
-                            Ping速度
-                            {% if sort_by == 'ping_latency' %}
-                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>
-                        <a href="{{ url_for('index', sort_by='last_checked', sort_order='asc' if sort_by != 'last_checked' or sort_order == 'desc' else 'desc', search=search_query) }}">
-                            最終確認
-                            {% if sort_by == 'last_checked' %}
-                                <span class="sort-indicator">{{ '▲' if sort_order == 'asc' else '▼' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th>アクション</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for device in devices %}
-                <tr>
-                    <td data-label="ID">{{ device.id }}</td>
-                    <td data-label="名前">
-                        {{ device.name }}
-                    </td>
-                    <td data-label="ローカルIP" class="ip-{{ device.local_ip_status }}">
-                        {{ device.local_ip if device.local_ip else '未登録' }}
-                    </td>
-                    <td data-label="Tailscale IP" class="ip-{{ device.tailscale_ip_status }}">
-                        {{ device.tailscale_ip if device.tailscale_ip else '未登録' }}
-                    </td>
-                    <td data-label="サービス / ポート">
-                        {% if device.services %}
-                            {% for service in device.services %}
-                                <div class="service-entry">
-                                    {% if device.link_ip %}
-                                        <a href="http://{{ device.link_ip }}{% if service.port %}:{{ service.port }}{% endif %}" target="_blank" class="service-link">
-                                            {{ service.name }}
-                                            {% if service.port %}
-                                                ({{ service.port }})
-                                            {% else %}
-                                                (ポートなし)
-                                            {% endif %}
-                                        </a>
-                                    {% else %}
-                                        <span>
-                                            {{ service.name }}
-                                            {% if service.port %}
-                                                ({{ service.port }})
-                                            {% else %}
-                                                (ポートなし)
-                                            {% endif %}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            サービス未登録
-                        {% endif %}
-                    </td>
-                    <td data-label="状態" class="status-{{ device.status | lower }}">{{ device.status }}</td>
-                    <td data-label="Ping速度">
-                        {% if device.ping_latency is not none %}
-                            {{ "%.1f" | format(device.ping_latency) }} ms
-                            <span class="signal-bars signal-{{ get_signal_strength(device.ping_latency) }}">
-                                <span class="signal-bar signal-bar-1"></span>
-                                <span class="signal-bar signal-bar-2"></span>
-                                <span class="signal-bar signal-bar-3"></span>
-                                <span class="signal-bar signal-bar-4"></span>
-                            </span>
-                        {% else %}
-                            -
-                            <span class="signal-bars signal-0">
-                                <span class="signal-bar signal-bar-1"></span>
-                                <span class="signal-bar signal-bar-2"></span>
-                                <span class="signal-bar signal-bar-3"></span>
-                                <span class="signal-bar signal-bar-4"></span>
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td data-label="最終確認">{{ format_last_checked(device.last_checked) }}</td>
-                    <td data-label="アクション" class="actions">
-                        <a href="{{ url_for('edit_device', device_id=device.id) }}" class="edit">編集</a>
-                        <a href="{{ url_for('delete_device', device_id=device.id) }}" class="delete" onclick="return confirm('本当に削除しますか？');">削除</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- フラッシュメッセージ -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
 
-        <a href="{{ url_for('add_device') }}" class="add-button">デバイスを追加</a>
-{% endblock %}
+    <!-- チェック進捗 -->
+    <div class="check-progress" id="checkProgress">
+        <span>チェック中...</span>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+        <span class="progress-text" id="progressText">0 / 0</span>
+    </div>
+
+    <!-- 登録フォーム -->
+    <form action="{{ url_for('index') }}" method="post" class="add-form">
+        <div class="field name">
+            <label>サービス名</label>
+            <input type="text" name="service_name" required placeholder="WebUI">
+        </div>
+        <div class="field ip">
+            <label>IPアドレス</label>
+            <input type="text" name="ip_address" required placeholder="192.168.1.10">
+        </div>
+        <div class="field port">
+            <label>ポート</label>
+            <input type="number" name="port" placeholder="80" list="port-list">
+            <datalist id="port-list">
+                {% for port in port_history %}<option value="{{ port }}">{% endfor %}
+            </datalist>
+        </div>
+        <button type="submit" class="btn btn-primary">登録</button>
+    </form>
+
+    <!-- コントロール -->
+    <div class="controls">
+        <form action="{{ url_for('index') }}" method="get" class="search-box">
+            <input type="text" name="search" placeholder="検索..." value="{{ search_query }}">
+            <input type="hidden" name="view" value="{{ view_mode }}">
+            <button type="submit" class="btn btn-secondary">検索</button>
+        </form>
+        <div class="view-toggle">
+            <a href="{{ url_for('index', view='list', search=search_query) }}" class="{{ 'active' if view_mode == 'list' }}">リスト</a>
+            <a href="{{ url_for('index', view='group', search=search_query) }}" class="{{ 'active' if view_mode == 'group' }}">グループ</a>
+        </div>
+        <button class="btn btn-secondary" onclick="toggleJsonView()">JSON</button>
+    </div>
+
+    <pre id="jsonData"></pre>
+
+    {% if view_mode == 'group' and grouped_services %}
+    <!-- グループ表示 -->
+    {% for group_name, group_services in grouped_services %}
+    <div class="group-header">
+        <span class="group-name">{{ group_name }}</span>
+        <span class="group-stats">
+            {% set ok_count = group_services | selectattr('status', 'equalto', 'reachable') | list | length %}
+            {% set ng_count = group_services | selectattr('status', 'equalto', 'unreachable') | list | length %}
+            <span class="ok">{{ ok_count }} OK</span> / <span class="ng">{{ ng_count }} NG</span> / {{ group_services | length }} 件
+        </span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px">ID</th>
+                <th>名前</th>
+                <th>接続先</th>
+                <th style="width: 70px">ポート</th>
+                <th style="width: 180px">ステータス</th>
+                <th style="width: 140px">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for service in group_services %}
+        <tr id="service-{{ service.id }}" data-id="{{ service.id }}">
+            <td>{{ service.id }}</td>
+            <td class="name">
+                <span class="view-mode">
+                    <a href="http://{{ service.ip_address }}:{{ service.port }}" target="_blank">{{ service.service_name }}</a>
+                </span>
+                <input type="text" name="service_name" class="edit-input edit-mode" value="{{ service.service_name }}">
+            </td>
+            <td class="ip">
+                <span class="view-mode">{{ service.ip_address }}</span>
+                <input type="text" name="ip_address" class="edit-input edit-mode" value="{{ service.ip_address }}">
+            </td>
+            <td class="port">
+                <span class="view-mode">{{ service.port if service.port is not none else '-' }}</span>
+                <input type="number" name="port" class="edit-input edit-mode" value="{{ service.port if service.port is not none else '' }}" min="1" max="65535">
+            </td>
+            <td>
+                <span class="status-container">
+                {% if service.status == 'reachable' %}
+                <span class="status reachable">OK <span class="latency">{{ "%.0f" | format(service.http_latency) }}ms</span></span>
+                {% elif service.status == 'unreachable' %}
+                <span class="status unreachable">NG</span>
+                {% else %}
+                <span class="status unknown">?</span>
+                {% endif %}
+                {% if service.last_checked %}
+                <span class="last-check">{{ format_last_checked(service.last_checked) }}</span>
+                {% endif %}
+                </span>
+            </td>
+            <td>
+                <div class="actions view-mode">
+                    <button class="check-btn" onclick="checkSingle({{ service.id }})" title="チェック">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleEdit({{ service.id }})">編集</button>
+                    <a href="{{ url_for('delete_service', service_id=service.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('削除しますか？')">削除</a>
+                </div>
+                <div class="actions edit-mode">
+                    <button class="btn btn-sm btn-primary" onclick="updateService({{ service.id }})">保存</button>
+                    <button class="btn btn-sm btn-secondary" onclick="cancelEdit({{ service.id }})">取消</button>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endfor %}
+
+    {% else %}
+    <!-- リスト表示 -->
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 50px">
+                    <a href="{{ url_for('index', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', search=search_query, view=view_mode) }}">
+                        ID {{ '▲' if sort_by == 'id' and sort_order == 'asc' else ('▼' if sort_by == 'id' else '') }}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('index', sort_by='service_name', sort_order='asc' if sort_by != 'service_name' or sort_order == 'desc' else 'desc', search=search_query, view=view_mode) }}">
+                        名前 {{ '▲' if sort_by == 'service_name' and sort_order == 'asc' else ('▼' if sort_by == 'service_name' else '') }}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('index', sort_by='ip_address', sort_order='asc' if sort_by != 'ip_address' or sort_order == 'desc' else 'desc', search=search_query, view=view_mode) }}">
+                        接続先 {{ '▲' if sort_by == 'ip_address' and sort_order == 'asc' else ('▼' if sort_by == 'ip_address' else '') }}
+                    </a>
+                </th>
+                <th style="width: 70px">
+                    <a href="{{ url_for('index', sort_by='port', sort_order='asc' if sort_by != 'port' or sort_order == 'desc' else 'desc', search=search_query, view=view_mode) }}">
+                        ポート {{ '▲' if sort_by == 'port' and sort_order == 'asc' else ('▼' if sort_by == 'port' else '') }}
+                    </a>
+                </th>
+                <th style="width: 180px">
+                    <a href="{{ url_for('index', sort_by='status', sort_order='asc' if sort_by != 'status' or sort_order == 'desc' else 'desc', search=search_query, view=view_mode) }}">
+                        ステータス {{ '▲' if sort_by == 'status' and sort_order == 'asc' else ('▼' if sort_by == 'status' else '') }}
+                    </a>
+                </th>
+                <th style="width: 140px">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for service in services %}
+        <tr id="service-{{ service.id }}" data-id="{{ service.id }}">
+            <td>{{ service.id }}</td>
+            <td class="name">
+                <span class="view-mode">
+                    <a href="http://{{ service.ip_address }}:{{ service.port }}" target="_blank">{{ service.service_name }}</a>
+                </span>
+                <input type="text" name="service_name" class="edit-input edit-mode" value="{{ service.service_name }}">
+            </td>
+            <td class="ip">
+                <span class="view-mode">{{ service.ip_address }}</span>
+                <input type="text" name="ip_address" class="edit-input edit-mode" value="{{ service.ip_address }}">
+            </td>
+            <td class="port">
+                <span class="view-mode">{{ service.port if service.port is not none else '-' }}</span>
+                <input type="number" name="port" class="edit-input edit-mode" value="{{ service.port if service.port is not none else '' }}" min="1" max="65535">
+            </td>
+            <td>
+                <span class="status-container">
+                {% if service.status == 'reachable' %}
+                <span class="status reachable">
+                    OK <span class="latency">{{ "%.0f" | format(service.http_latency) }}ms</span>
+                </span>
+                {% elif service.status == 'unreachable' %}
+                <span class="status unreachable">NG</span>
+                {% else %}
+                <span class="status unknown">?</span>
+                {% endif %}
+                {% if service.last_checked %}
+                <span class="last-check">{{ format_last_checked(service.last_checked) }}</span>
+                {% endif %}
+                </span>
+            </td>
+            <td>
+                <div class="actions view-mode">
+                    <button class="check-btn" onclick="checkSingle({{ service.id }})" title="チェック">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="toggleEdit({{ service.id }})">編集</button>
+                    <a href="{{ url_for('delete_service', service_id=service.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('削除しますか？')">削除</a>
+                </div>
+                <div class="actions edit-mode">
+                    <button class="btn btn-sm btn-primary" onclick="updateService({{ service.id }})">保存</button>
+                    <button class="btn btn-sm btn-secondary" onclick="cancelEdit({{ service.id }})">取消</button>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<script>
+let isChecking = false;
+
+function formatLastChecked(timestamp) {
+    if (!timestamp) return 'N/A';
+    const d = new Date(timestamp.replace(' ', 'T'));
+    return (d.getMonth()+1) + '/' + d.getDate() + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function updateStatusUI(id, data) {
+    const row = document.getElementById('service-' + id);
+    if (!row) return;
+
+    const container = row.querySelector('.status-container');
+    let statusClass = data.status === 'reachable' ? 'reachable' : (data.status === 'unreachable' ? 'unreachable' : 'unknown');
+    let statusText = data.status === 'reachable' ? 'OK' : (data.status === 'unreachable' ? 'NG' : '?');
+    let latencyHtml = data.latency ? ` <span class="latency">${Math.round(data.latency)}ms</span>` : '';
+    let lastCheck = formatLastChecked(data.last_checked);
+
+    container.innerHTML = `
+        <span class="status ${statusClass}">${statusText}${latencyHtml}</span>
+        <span class="last-check">${lastCheck}</span>
+    `;
+}
+
+function checkSingle(id) {
+    const row = document.getElementById('service-' + id);
+    const btn = row.querySelector('.check-btn');
+    const container = row.querySelector('.status-container');
+
+    btn.classList.add('checking');
+    container.innerHTML = '<span class="status checking">チェック中...</span>';
+
+    fetch('/check_single/' + id)
+        .then(r => r.json())
+        .then(data => {
+            btn.classList.remove('checking');
+            updateStatusUI(id, data);
+        })
+        .catch(err => {
+            btn.classList.remove('checking');
+            container.innerHTML = '<span class="status unknown">エラー</span>';
+        });
+}
+
+function checkAllServices() {
+    if (isChecking) return;
+    isChecking = true;
+
+    const rows = document.querySelectorAll('tr[data-id]');
+    const total = rows.length;
+    let completed = 0;
+
+    const progress = document.getElementById('checkProgress');
+    const fill = document.getElementById('progressFill');
+    const text = document.getElementById('progressText');
+    progress.classList.add('active');
+
+    // すべてをチェック中に
+    rows.forEach(row => {
+        const container = row.querySelector('.status-container');
+        const btn = row.querySelector('.check-btn');
+        if (container) container.innerHTML = '<span class="status checking">...</span>';
+        if (btn) btn.classList.add('checking');
+    });
+
+    fetch('/check_all_async')
+        .then(r => r.json())
+        .then(data => {
+            data.results.forEach((result, i) => {
+                setTimeout(() => {
+                    updateStatusUI(result.id, result);
+                    const row = document.getElementById('service-' + result.id);
+                    if (row) {
+                        const btn = row.querySelector('.check-btn');
+                        if (btn) btn.classList.remove('checking');
+                    }
+                    completed++;
+                    fill.style.width = (completed / total * 100) + '%';
+                    text.textContent = completed + ' / ' + total;
+
+                    if (completed >= total) {
+                        setTimeout(() => {
+                            progress.classList.remove('active');
+                            isChecking = false;
+                            document.getElementById('lastUpdated').textContent = '最終: ' + formatLastChecked(data.timestamp);
+                        }, 500);
+                    }
+                }, i * 50);
+            });
+        })
+        .catch(err => {
+            progress.classList.remove('active');
+            isChecking = false;
+            alert('チェック中にエラーが発生しました');
+        });
+}
+
+// 編集機能
+let editingId = null;
+
+function toggleEdit(id) {
+    if (editingId !== null && editingId !== id) {
+        alert('他の行を編集中です');
+        return;
+    }
+    const row = document.getElementById('service-' + id);
+    row.classList.add('editing');
+    editingId = id;
+}
+
+function cancelEdit(id) {
+    const row = document.getElementById('service-' + id);
+    row.classList.remove('editing');
+    editingId = null;
+}
+
+function updateService(id) {
+    const row = document.getElementById('service-' + id);
+    const name = row.querySelector('input[name="service_name"]').value.trim();
+    const ip = row.querySelector('input[name="ip_address"]').value.trim();
+    const port = row.querySelector('input[name="port"]').value.trim();
+
+    if (!name || !ip || !port) {
+        alert('すべての項目を入力してください');
+        return;
+    }
+
+    const form = new URLSearchParams();
+    form.append('service_name', name);
+    form.append('ip_address', ip);
+    form.append('port', port);
+
+    fetch('/edit/' + id, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: form.toString()
+    }).then(r => {
+        window.location.reload();
+    });
+}
+
+// JSON表示
+function toggleJsonView() {
+    const el = document.getElementById('jsonData');
+    if (el.style.display !== 'none') {
+        el.style.display = 'none';
+        return;
+    }
+    fetch('/json_data')
+        .then(r => r.json())
+        .then(data => {
+            el.textContent = JSON.stringify(data, null, 2);
+            el.style.display = 'block';
+        });
+}
+</script>
+</body>
+</html>
