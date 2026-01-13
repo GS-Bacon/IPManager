@@ -1,31 +1,24 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPマネージャー</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; color: #333; }
-        .container { max-width: 1200px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #0056b3; margin-bottom: 20px; }
-        .flash-messages { margin-bottom: 20px; }
-        .flash-messages .success { background-color: #d4edda; color: #155724; padding: 10px; border: 1px solid #c3e6cb; border-radius: 5px; }
-        .flash-messages .error { background-color: #f8d7da; color: #721c24; padding: 10px; border: 1px solid #f5c6cb; border-radius: 5px; }
-        .flash-messages .info { background-color: #d1ecf1; color: #0c5460; padding: 10px; border: 1px solid #bee5eb; border-radius: 5px; }
-        
-        .search-sort-controls { 
-            margin-bottom: 20px; 
-            display: flex; 
-            flex-wrap: wrap; 
-            justify-content: space-between; 
-            align-items: center; 
-            gap: 10px; 
+{% extends "base.html" %}
+
+{% block title %}IPマネージャー{% endblock %}
+{% block heading %}登録デバイス一覧{% endblock %}
+
+{% block extra_styles %}
+        /* 検索・ソートコントロール */
+        .search-sort-controls {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
         }
-        .search-form { display: flex; gap: 5px; flex-grow: 1; max-width: 350px;} 
+        .search-form { display: flex; gap: 5px; flex-grow: 1; max-width: 350px; }
         .search-form input[type="text"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; flex-grow: 1; }
         .search-form button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
         .search-form button:hover { background-color: #0056b3; }
 
+        /* テーブルスタイル */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
         th { background-color: #0056b3; color: white; cursor: pointer; white-space: nowrap; }
@@ -37,31 +30,30 @@
         .actions a.edit { background-color: #ffc107; color: black; }
         .actions a.delete { background-color: #dc3545; color: white; }
         .add-button { display: block; width: fit-content; margin: 20px auto 0; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px; text-align: center; }
-        
+
+        /* ステータス表示 */
         .status-reachable { color: green; font-weight: bold; }
         .status-unreachable { color: red; font-weight: bold; }
         .status-unknown { color: gray; }
 
         /* IPアドレスの表示スタイル */
-        .ip-reachable { background-color: #e6ffe6; } /* 薄い緑色 */
-        .ip-unreachable { background-color: #fcebeb; } /* 薄い赤色の背景 */
-        .ip-unknown { background-color: #f0f0f0; } /* 薄い灰色 */
+        .ip-reachable { background-color: #e6ffe6; }
+        .ip-unreachable { background-color: #fcebeb; }
+        .ip-unknown { background-color: #f0f0f0; }
 
         /* サービス名リンクのスタイル */
         .service-link {
             display: block;
             text-decoration: none;
-            color: #007bff; /* 青色 */
-            margin-bottom: 2px; 
-            font-weight: bold; 
+            color: #007bff;
+            margin-bottom: 2px;
+            font-weight: bold;
         }
-        .service-link:hover {
-            text-decoration: underline;
-        }
+        .service-link:hover { text-decoration: underline; }
         .service-entry {
             margin-bottom: 5px;
             padding-bottom: 5px;
-            border-bottom: 1px dotted #eee; 
+            border-bottom: 1px dotted #eee;
         }
         .service-entry:last-child {
             border-bottom: none;
@@ -74,15 +66,15 @@
             display: inline-block;
             vertical-align: middle;
             margin-left: 5px;
-            width: 20px; 
-            height: 16px; 
+            width: 20px;
+            height: 16px;
             position: relative;
         }
         .signal-bar {
-            background-color: #555; 
+            background-color: #555;
             position: absolute;
             bottom: 0;
-            width: 4px; 
+            width: 4px;
             border-radius: 1px;
         }
         .signal-bar-1 { left: 0px; height: 4px; }
@@ -91,60 +83,56 @@
         .signal-bar-4 { left: 15px; height: 16px; }
 
         /* シグナル強度に応じた色 */
-        .signal-4 .signal-bar { background-color: #28a745; } 
-        .signal-3 .signal-bar { background-color: #17a2b8; } 
-        .signal-2 .signal-bar { background-color: #ffc107; } 
-        .signal-1 .signal-bar { background-color: #dc3545; } 
-        .signal-0 .signal-bar { background-color: #6c757d; } 
+        .signal-4 .signal-bar { background-color: #28a745; }
+        .signal-3 .signal-bar { background-color: #17a2b8; }
+        .signal-2 .signal-bar { background-color: #ffc107; }
+        .signal-1 .signal-bar { background-color: #dc3545; }
+        .signal-0 .signal-bar { background-color: #6c757d; }
+{% endblock %}
 
-        /* --- レスポンシブデザイン --- */
-        @media screen and (max-width: 768px) {
-            body { padding: 10px; }
-            .container { padding: 15px; }
-            h1 { font-size: 1.8em; }
-
+{% block responsive_styles %}
             .search-sort-controls {
-                flex-direction: column; 
-                align-items: stretch; 
+                flex-direction: column;
+                align-items: stretch;
             }
             .search-form {
-                width: 100%; 
+                width: 100%;
                 max-width: none;
             }
             .add-button {
-                width: 100%; 
+                width: 100%;
             }
 
             table, thead, tbody, th, td, tr {
-                display: block; 
+                display: block;
             }
             thead tr {
                 position: absolute;
                 top: -9999px;
-                left: -9999px; 
+                left: -9999px;
             }
             tr {
                 border: 1px solid #ccc;
                 margin-bottom: 10px;
                 border-radius: 5px;
-                overflow: hidden; 
+                overflow: hidden;
             }
             td {
-                border: none; 
-                border-bottom: 1px solid #eee; 
+                border: none;
+                border-bottom: 1px solid #eee;
                 position: relative;
-                padding-left: 50%; 
-                text-align: right; 
-                white-space: normal; 
+                padding-left: 50%;
+                text-align: right;
+                white-space: normal;
             }
             td:last-child {
-                border-bottom: none; 
+                border-bottom: none;
             }
             td::before {
-                content: attr(data-label); 
+                content: attr(data-label);
                 position: absolute;
                 left: 6px;
-                width: 45%; 
+                width: 45%;
                 padding-right: 10px;
                 white-space: nowrap;
                 text-align: left;
@@ -153,53 +141,38 @@
             }
 
             .actions {
-                text-align: right; 
-                padding: 10px 8px; 
+                text-align: right;
+                padding: 10px 8px;
             }
             .actions a {
-                margin: 5px 0 0 5px; 
-                display: inline-block; 
+                margin: 5px 0 0 5px;
+                display: inline-block;
                 width: auto;
             }
             .service-entry {
-                text-align: right; 
+                text-align: right;
             }
             .service-link {
-                text-align: right; 
-                padding: 0; 
+                text-align: right;
+                padding: 0;
             }
-        }
-        
-        @media screen and (max-width: 480px) { 
+{% endblock %}
+
+{% block small_screen_styles %}
             .search-form input[type="text"],
             .search-form button {
                 font-size: 0.9em;
                 padding: 6px 10px;
             }
             td {
-                padding-left: 45%; 
+                padding-left: 45%;
             }
             td::before {
                 width: 40%;
             }
-        }
+{% endblock %}
 
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>登録デバイス一覧</h1>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
+{% block content %}
         <div class="search-sort-controls">
             <form action="{{ url_for('index') }}" method="get" class="search-form">
                 <input type="text" name="search" placeholder="名前/IP/サービス名/ポートで検索" value="{{ search_query }}">
@@ -287,9 +260,9 @@
                         {% if device.services %}
                             {% for service in device.services %}
                                 <div class="service-entry">
-                                    {% if device.link_ip %} {# IPが設定されている場合のみリンクを生成 #}
+                                    {% if device.link_ip %}
                                         <a href="http://{{ device.link_ip }}{% if service.port %}:{{ service.port }}{% endif %}" target="_blank" class="service-link">
-                                            {{ service.name }} 
+                                            {{ service.name }}
                                             {% if service.port %}
                                                 ({{ service.port }})
                                             {% else %}
@@ -297,9 +270,8 @@
                                             {% endif %}
                                         </a>
                                     {% else %}
-                                        {# IPが設定されていない場合はリンクなしで表示 #}
                                         <span>
-                                            {{ service.name }} 
+                                            {{ service.name }}
                                             {% if service.port %}
                                                 ({{ service.port }})
                                             {% else %}
@@ -344,6 +316,4 @@
         </table>
 
         <a href="{{ url_for('add_device') }}" class="add-button">デバイスを追加</a>
-    </div>
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IPマネージャー{% endblock %}</title>
+    <style>
+        /* 共通スタイル */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: {% block container_width %}1200px{% endblock %};
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+
+        /* フラッシュメッセージ */
+        .flash-messages { margin-bottom: 20px; }
+        .flash-messages .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+        }
+        .flash-messages .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+        }
+        .flash-messages .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border: 1px solid #bee5eb;
+            border-radius: 5px;
+        }
+
+        /* フォーム共通スタイル */
+        form div { margin-bottom: 15px; }
+        form label { display: block; margin-bottom: 5px; font-weight: bold; }
+        form input[type="text"],
+        form input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        form button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        form button:hover { background-color: #0056b3; }
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .back-button:hover { background-color: #5a6268; }
+
+        /* サービス入力欄のスタイル */
+        .service-entry-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .service-entry-row input {
+            flex: 1;
+            min-width: 100px;
+        }
+        .service-entry-row .remove-service-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .service-entry-row .remove-service-btn:hover {
+            background-color: #c82333;
+        }
+        .add-service-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            white-space: nowrap;
+            margin-top: 5px;
+        }
+        .add-service-btn:hover {
+            background-color: #218838;
+        }
+
+        {% block extra_styles %}{% endblock %}
+
+        /* レスポンシブデザイン */
+        @media screen and (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            h1 { font-size: 1.8em; }
+            form input[type="text"],
+            form input[type="number"] {
+                width: 100%;
+            }
+            .service-entry-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+            }
+            .service-entry-row input {
+                width: 100%;
+            }
+            .service-entry-row .remove-service-btn {
+                width: 100%;
+            }
+            {% block responsive_styles %}{% endblock %}
+        }
+
+        @media screen and (max-width: 480px) {
+            {% block small_screen_styles %}{% endblock %}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{% block heading %}{% endblock %}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
