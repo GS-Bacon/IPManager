@@ -258,6 +258,19 @@
     .check-btn.checking { animation: spin 1s linear infinite; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
+    /* お気に入りボタン */
+    .favorite-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2em;
+        color: var(--color-muted);
+        transition: all var(--transition);
+        padding: 2px;
+    }
+    .favorite-btn:hover { color: var(--color-accent); transform: scale(1.2); }
+    .favorite-btn.active { color: var(--color-accent); }
+
     /* 編集モード */
     .edit-input {
         padding: 4px 8px;
@@ -397,6 +410,7 @@
     <table>
         <thead>
             <tr>
+                <th style="width: 30px">★</th>
                 <th style="width: 50px">ID</th>
                 <th>名前</th>
                 <th>接続先</th>
@@ -408,6 +422,11 @@
         <tbody>
         {% for service in group_services %}
         <tr id="service-{{ service.id }}" data-id="{{ service.id }}">
+            <td>
+                <button class="favorite-btn {{ 'active' if service.favorite else '' }}" onclick="toggleFavorite({{ service.id }})" title="お気に入り">
+                    {{ '★' if service.favorite else '☆' }}
+                </button>
+            </td>
             <td>{{ service.id }}</td>
             <td class="name">
                 <span class="view-mode">
@@ -461,6 +480,7 @@
     <table>
         <thead>
             <tr>
+                <th style="width: 30px">★</th>
                 <th style="width: 50px">
                     <a href="{{ url_for('index', sort_by='id', sort_order='asc' if sort_by != 'id' or sort_order == 'desc' else 'desc', search=search_query, view=view_mode) }}">
                         ID {{ '▲' if sort_by == 'id' and sort_order == 'asc' else ('▼' if sort_by == 'id' else '') }}
@@ -492,6 +512,11 @@
         <tbody>
         {% for service in services %}
         <tr id="service-{{ service.id }}" data-id="{{ service.id }}">
+            <td>
+                <button class="favorite-btn {{ 'active' if service.favorite else '' }}" onclick="toggleFavorite({{ service.id }})" title="お気に入り">
+                    {{ '★' if service.favorite else '☆' }}
+                </button>
+            </td>
             <td>{{ service.id }}</td>
             <td class="name">
                 <span class="view-mode">
@@ -545,6 +570,20 @@
 
 <script>
 let isChecking = false;
+
+function toggleFavorite(id) {
+    fetch('/toggle_favorite/' + id)
+        .then(r => r.json())
+        .then(data => {
+            const btn = document.querySelector('#service-' + id + ' .favorite-btn');
+            if (btn) {
+                btn.classList.toggle('active', data.favorite);
+                btn.textContent = data.favorite ? '★' : '☆';
+            }
+            // ページをリロードしてソート順を更新
+            location.reload();
+        });
+}
 
 function formatLastChecked(timestamp) {
     if (!timestamp) return 'N/A';

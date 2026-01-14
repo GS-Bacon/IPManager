@@ -44,8 +44,9 @@ def load_data():
             svc['http_latency'] = svc.pop('ping_latency') 
         svc.setdefault('http_latency', None)
         svc.setdefault('last_checked', None)
-        svc.setdefault('ip_type', 'unknown') 
-        
+        svc.setdefault('ip_type', 'unknown')
+        svc.setdefault('favorite', False)
+
     # ポート履歴をセットで管理し、重複を防ぐ
     data['port_history'] = sorted(list(set(data['port_history'])))
         
@@ -306,9 +307,10 @@ def index():
             'ip_address': ip_address,
             'port': port,
             'status': 'unknown',
-            'http_latency': None, 
+            'http_latency': None,
             'last_checked': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'ip_type': get_ip_type(ip_address) 
+            'ip_type': get_ip_type(ip_address),
+            'favorite': False
         })
         save_data(data)
         flash('サービスが登録されました。', 'success')
@@ -330,29 +332,33 @@ def index():
     sort_order = request.args.get('sort_order', 'asc')
 
     def get_sort_key(svc):
+        # お気に入りは常に最優先（0=お気に入り、1=通常）
+        fav = 0 if svc.get('favorite') else 1
+
         if sort_by == 'service_name':
-            # 優先順位: サービス名 (小文字) -> IPランク (ローカル優先) -> IPアドレス
             return (
-                svc.get('service_name', '').lower(), 
+                fav,
+                svc.get('service_name', '').lower(),
                 get_ip_rank(svc.get('ip_address', '0.0.0.0')),
                 svc.get('ip_address', '0.0.0.0')
             )
         elif sort_by == 'id':
-            return svc.get('id', 0)
+            return (fav, svc.get('id', 0))
         elif sort_by == 'ip_address':
-            return svc.get('ip_address', '0.0.0.0')
-        elif sort_by == 'port': 
-            return svc.get('port') if svc.get('port') is not None else float('inf')
+            return (fav, svc.get('ip_address', '0.0.0.0'))
+        elif sort_by == 'port':
+            return (fav, svc.get('port') if svc.get('port') is not None else float('inf'))
         elif sort_by == 'status':
             latency = svc.get('http_latency')
-            # 優先順位: ステータスランク -> 応答速度 (Noneはinf)
             return (
+                fav,
                 get_status_rank(svc.get('status', 'unknown')),
                 latency if latency is not None else float('inf')
             )
-        
+
         return (
-            svc.get('service_name', '').lower(), 
+            fav,
+            svc.get('service_name', '').lower(),
             get_ip_rank(svc.get('ip_address', '0.0.0.0')),
             svc.get('ip_address', '0.0.0.0')
         )
@@ -449,6 +455,19 @@ def delete_service(service_id):
     save_data(data)
     flash('サービスが削除されました。', 'success')
     return redirect(url_for('index'))
+
+@app.route('/toggle_favorite/<int:service_id>')
+def toggle_favorite(service_id):
+    """お気に入りフラグをトグル"""
+    data = load_data()
+    svc = next((s for s in data['services'] if s['id'] == service_id), None)
+
+    if svc is None:
+        return jsonify({'error': 'Service not found'}), 404
+
+    svc['favorite'] = not svc.get('favorite', False)
+    save_data(data)
+    return jsonify({'id': service_id, 'favorite': svc['favorite']})
 
 @app.route('/check_single/<int:service_id>')
 def check_single_service(service_id):
